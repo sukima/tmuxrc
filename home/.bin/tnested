@@ -1,0 +1,44 @@
+#!/bin/sh
+
+SESSION=main
+
+while test $# -gt 0
+do
+  case $1 in
+    -h|--help)
+      echo "usage: $0 [-s SESSION] [-n TITLE] [CMD]"
+      echo "  -s, --session  Specify session name (default: main)"
+      echo "  -n, --name     Set first window title"
+      echo "  CMD            Run a command"
+      exit 0
+      ;;
+    -s|--session)
+      SESSION="$2"
+      shift
+      ;;
+    -n|--name)
+      name="-n $2"
+      shift
+      ;;
+    --)
+      break
+      ;;
+    --*|-?)
+      echo "Unknown option '$1'" 1>&2
+      exit 1
+      ;;
+    *)
+      break
+      ;;
+  esac
+  shift
+done
+
+tmux start-server
+
+if ! $(tmux has-session -t ${SESSION})
+then
+  tmux new-session -d -s ${SESSION} $name "$@" \; source-file ${HOME}/.tmux.conf.nested
+fi
+
+tmux -2 attach-session -d -t ${SESSION}
