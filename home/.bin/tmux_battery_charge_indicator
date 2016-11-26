@@ -7,6 +7,8 @@
 HEART='♥'
 
 if [[ `uname` == 'Linux' ]]; then
+  [[ -e /proc/acpi/battery/BAT1/state ]] || exit 0
+  [[ -e /proc/acpi/battery/BAT1/info ]] || exit 0
   current_charge=$(cat /proc/acpi/battery/BAT1/state | grep 'remaining capacity' | awk '{print $3}')
   total_charge=$(cat /proc/acpi/battery/BAT1/info | grep 'last full capacity' | awk '{print $4}')
 else
@@ -27,4 +29,5 @@ for i in `seq 1 $charged_slots`; do echo -n "$HEART"; done
 if [[ $charged_slots -lt 10 ]]; then
   echo -n '#[fg=white]'
   for i in `seq 1 $(echo "10-$charged_slots" | bc)`; do echo -n "$HEART"; done
+  echo -n ' '
 fi
