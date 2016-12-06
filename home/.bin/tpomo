@@ -1,0 +1,173 @@
+#!/bin/bash
+
+VERSION=1.0
+config_file="${HOME}/.tmux/tpomorc"
+db_file="${HOME}/.tmux/tpomo.db"
+mode="pomodoro"
+
+config_pomodoro=25
+config_short_break=5
+config_long_break=15
+
+version() {
+  echo "Version: $VERSION"
+}
+
+usage() {
+  echo "Usage: tpomo [-c FILE] [-vhspblk]"
+  version
+  echo "  -c, --config FILE  Load config from FILE (default '~/.tmux/tpomorc')"
+  echo "  -d, --dbfile FILE  Load status from FILE (default '~/.tmux/tpomo.db')"
+  echo "  -v, --version      Print the version"
+  echo "  -h, --help         This cruft"
+  echo "  -s, --status       Output status for current running Pomodoro"
+  echo "  -p, --pomodoro     Start a Pomodoro (default)"
+  echo "  -b, --break        Start a short break"
+  echo "  -l, --long-break   Start a long break"
+  echo "  -k, --kill         Kill current running Pomodoro"
+}
+
+read_config() {
+  local varname
+  if [[ -r "$config_file" ]]; then
+    while read line
+    do
+      if echo $line | grep -F = &>/dev/null
+      then
+        varname=$(echo "config_$line" | cut -d '=' -f 1)
+        declare ${varname}=$(echo "$line" | cut -d '=' -f 2-)
+      fi
+    done < "$config_file"
+  fi
+}
+
+start_pomodoro() {
+  echo "$(date -v+${2}M +'%s')" > "$db_file"
+  echo "Started $1 ($2 minutes)"
+}
+
+end_pomodoro() {
+  echo "0 notified" > "$db_file"
+  echo "Stopped pomodoro"
+}
+
+pomo_timer() {
+  cat "$db_file" 2>/dev/null | cut -d ' ' -f 1 || echo "0"
+}
+
+pomo_status() {
+  cat "$db_file" 2>/dev/null | cut -d ' ' -f 2 || echo ""
+}
+
+show_status() {
+  local now="$(date +'%s')"
+  local timer=$(pomo_timer)
+  local time_left=$[$timer - $now]
+  local minutes=$[$time_left / 60 + 1]
+  local quarters=$[$time_left % 60 / 15 + 1]
+  local empty_quarters=$[4 - $quarters]
+  local pad1
+  local pad2
+  [[ $empty_quarters -gt 0 ]] && pad1=$(printf "%${empty_quarters}s" ' ' | tr ' ' '◦')
+  [[ $quarters -gt 0 ]] && pad2=$(printf "%${quarters}s" ' ' | tr ' ' '•')
+  if [[ $time_left -gt 0 ]]; then
+    printf "🍅 ${minutes}${pad1}${pad2}"
+    return 0
+  elif [[ $time_left -gt -45 ]]; then
+    printf "🍅 Done"
+    return 0
+  else
+    return 1
+  fi
+}
+
+notify_when_done() {
+  local now="$(date +'%s')"
+  local timer=$(pomo_timer)
+  local notified=$(pomo_status)
+  local time_left=$[$timer - $now]
+  if [[ $notified != "notified" && $time_left -le 0 ]]; then
+    tmux display-message "Pomodoro timer complete"
+    echo "$timer notified" > "$db_file"
+  fi
+}
+
+while test $# -gt 0
+do
+  case $1 in
+  # Normal option processing
+    -v | --version)
+      version
+      exit 0
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    -s | --status)
+      mode="status"
+      ;;
+    -p | --pomodoro)
+      mode="pomodoro"
+      ;;
+    -b | --break)
+      mode="short-break"
+      ;;
+    -l | --long-break)
+      mode="long-break"
+      ;;
+    -k | --kill)
+      mode="kill"
+      ;;
+    -c | --config)
+      shift
+      config_file="$1"
+      ;;
+    -d | --dbfile)
+      shift
+      db_file="$1"
+      ;;
+
+  # ...
+
+  # Special cases
+    --)
+      break
+      ;;
+    --* | -?)
+      echo "tpomo: unknown option -- $1" >&2
+      usage >&2
+      exit 1
+      ;;
+
+  # Done with options
+    *)
+      break
+      ;;
+  esac
+
+  shift
+done
+
+# message="$1"
+read_config
+
+case $mode in
+  pomodoro)
+    start_pomodoro "pomodoro" $config_pomodoro
+    ;;
+  short-break)
+    start_pomodoro "short break" $config_short_break
+    ;;
+  long-break)
+    start_pomodoro "long break" $config_long_break
+    ;;
+  kill)
+    end_pomodoro
+    ;;
+  status)
+    notify_when_done
+    show_status
+    exit $?
+    ;;
+esac
