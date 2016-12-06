@@ -8,6 +8,7 @@ mode="pomodoro"
 config_pomodoro=25
 config_short_break=5
 config_long_break=15
+config_notify_command="tmux display-message"
 
 version() {
   echo "Version: $VERSION"
@@ -87,7 +88,7 @@ notify_when_done() {
   local notified=$(pomo_status)
   local time_left=$[$timer - $now]
   if [[ $notified != "notified" && $time_left -le 0 ]]; then
-    tmux display-message "Pomodoro timer complete"
+    $config_notify_command "Pomodoro timer complete"
     echo "$timer notified" > "$db_file"
   fi
 }
