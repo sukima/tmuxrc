@@ -1,7 +1,8 @@
 # Initialize or install tmuxifier
 
 install_tmuxifier() {
-  git clone https://github.com/jimeh/tmuxifier.git ~/.tmuxifier
+  git clone https://github.com/jimeh/tmuxifier.git "$HOME/.tmuxifier"
+  mkdir "$HOME/.tmuxifier_layouts"
   echo "Done. Run load_bach_modules to initialize"
 }
 
