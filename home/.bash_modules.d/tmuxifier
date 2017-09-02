@@ -1,0 +1,11 @@
+# Initialize or install tmuxifier
+
+install_tmuxifier() {
+  git clone https://github.com/jimeh/tmuxifier.git ~/.tmuxifier
+  echo "Done. Run load_bach_modules to initialize"
+}
+
+addToPath "$HOME/.tmuxifier/bin"
+eval "$(tmuxifier init -)"
+
+# vim: ft=sh sw=2 ts=2 et
