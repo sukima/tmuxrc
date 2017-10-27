@@ -6,7 +6,9 @@ install_tmuxifier() {
   echo "Done. Run load_bach_modules to initialize"
 }
 
-addToPath "$HOME/.tmuxifier/bin"
-eval "$(tmuxifier init -)"
+if command_exists tmuxifier; then
+  addToPath "$HOME/.tmuxifier/bin"
+  eval "$(tmuxifier init -)"
+fi
 
 # vim: ft=sh sw=2 ts=2 et
