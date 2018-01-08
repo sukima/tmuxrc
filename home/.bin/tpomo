@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=1.0
+VERSION=1.1
 config_file="${HOME}/.tmux/tpomorc"
 db_file="${HOME}/.tmux/tpomo.db"
 mode="pomodoro"
@@ -26,20 +26,6 @@ usage() {
   echo "  -b, --break        Start a short break"
   echo "  -l, --long-break   Start a long break"
   echo "  -k, --kill         Kill current running Pomodoro"
-}
-
-read_config() {
-  local varname
-  if [[ -r "$config_file" ]]; then
-    while read line
-    do
-      if echo $line | grep -F = &>/dev/null
-      then
-        varname=$(echo "config_$line" | cut -d '=' -f 1)
-        declare ${varname}=$(echo "$line" | cut -d '=' -f 2-)
-      fi
-    done < "$config_file"
-  fi
 }
 
 start_pomodoro() {
@@ -150,8 +136,16 @@ do
   shift
 done
 
-# message="$1"
-read_config
+if [[ -r "$config_file" ]]; then
+  while read line
+  do
+    if echo $line | grep -F = &>/dev/null
+    then
+      varname=$(echo "config_$line" | cut -d '=' -f 1)
+      declare ${varname}=$(echo "$line" | cut -d '=' -f 2-)
+    fi
+  done < "$config_file"
+fi
 
 case $mode in
   pomodoro)
