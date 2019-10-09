@@ -10,7 +10,7 @@ if [[ $NESTED_STATUS != "off" ]]; then
   RIGHT_STATUS_LINE+='#[bg=white,fg=colour240] %H:%M '
   RIGHT_STATUS_LINE+='#[bg=colour240,fg=white] #(~/.bin/tpomo -s || echo "%Y-%m-%d") '
 else
-  LEFT_STATUS_LINE='#[fg=white,bg=red] NESTED '
+  LEFT_STATUS_LINE='#[fg=red,bg=colour240] NESTED '
   RIGHT_STATUS_LINE="#[fg=white,bg=colour240] #{host_short} "
 fi
 
