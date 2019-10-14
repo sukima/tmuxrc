@@ -32,27 +32,34 @@ tmux-update-env() {
 }
 
 tmux-rename() {
+  local md5=$(command -v md5); md5=${md5:=md5sum}
   local tempfile="$(mktemp)"
+  trap "rm -f '\$tempfile'" RETURN
   echo "# TITLE NUM: COMMENTS (ignored)" > "$tempfile"
   tmux list-windows | sed -e's/^/TITLE /' >> "$tempfile"
-  local check="$(md5 "$tempfile")"
+  local check="$($md5 "$tempfile")"
   ${VISUAL:-${EDITOR:-vi}} "$tempfile"
   if [[ $? != 0 ]]; then
     echo "Editor exited with non zero code; aborting"
     return 1
   fi
-  if [[ $check == $(md5 "$tempfile") ]]; then
+  if [[ $check == $($md5 "$tempfile") ]]; then
     echo "No change detected; aborting"
     return 1
   fi
   while read line; do
     local result=($(echo "$line" | sed -e 's/[#:].*$//'))
-    [[ -z ${result[1]} ]] && continue
-    [[ -z ${result[0]} ]] && continue
-    [[ ${result[0]} == "TITLE" ]] && continue
-    tmux rename-window -t "${result[1]}" "${result[0]}"
+    [[ -z "${result[@]}" ]] && continue
+    local lastIndex=$[${#result[@]} - 1]
+    local winId="${result[$lastIndex]}"
+    unset result[$lastIndex]
+    local winTitle="${result[@]}"
+    echo "Renaming $winId '$winTitle'"
+    [[ -z "$winId" ]] && continue
+    [[ -z "$winTitle" ]] && continue
+    [[ "$winTitle" == "TITLE" ]] && continue
+    tmux rename-window -t "$winId" "$winTitle"
   done < "$tempfile"
-  rm -f "$tempfile"
 }
 
 tmux() {
