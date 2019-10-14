@@ -1,0 +1,84 @@
+# Custom TMUX commands
+
+# Idea from Rainer MÃ¼ller <raimue@codingfarm.de> (Released into Public Domain)
+# http://raim.codingfarm.de/blog/2013/01/30/tmux-update-environment/
+
+tmux-reorder() {
+  local tmux=$(type -fp tmux)
+  local i=$(tmux show-option -g |awk '/^base-index/ {print $2}')
+  local w
+  for w in $(tmux lsw | awk -F: '{print $1}'); do
+    if [ $w -gt $i ]; then
+      echo "Moving $w -> $i"
+      $tmux movew -d -s $w -t $i
+    fi
+    (( i++ ))
+  done
+}
+
+tmux-update-env() {
+  local v
+  local tmux=$(type -fp tmux)
+  while read v; do
+    if [[ $v == -* ]]; then
+      unset ${v/#-/}
+    else
+      # Add quotes around the argument
+      v=${v/=/=\"}
+      v=${v/%/\"}
+      eval export $v
+    fi
+  done < <($tmux show-environment)
+}
+
+tmux-rename() {
+  local tempfile="$(mktemp)"
+  echo "# TITLE NUM: COMMENTS (ignored)" > "$tempfile"
+  tmux list-windows | sed -e's/^/TITLE /' >> "$tempfile"
+  local check="$(md5 "$tempfile")"
+  ${VISUAL:-${EDITOR:-vi}} "$tempfile"
+  if [[ $? != 0 ]]; then
+    echo "Editor exited with non zero code; aborting"
+    return 1
+  fi
+  if [[ $check == $(md5 "$tempfile") ]]; then
+    echo "No change detected; aborting"
+    return 1
+  fi
+  while read line; do
+    local result=($(echo "$line" | sed -e 's/[#:].*$//'))
+    [[ -z ${result[1]} ]] && continue
+    [[ -z ${result[0]} ]] && continue
+    [[ ${result[0]} == "TITLE" ]] && continue
+    tmux rename-window -t "${result[1]}" "${result[0]}"
+  done < "$tempfile"
+  rm -f "$tempfile"
+}
+
+tmux() {
+  local tmux=$(type -fp tmux)
+  case "$1" in
+    reorder-windows|reorder|defrag)
+      tmux-reorder
+      ;;
+    update-environment|update-env|env-update)
+      tmux-update-env
+      ;;
+    rename|rename-windows|bulk-rename)
+      tmux-rename
+      ;;
+    -h|--help)
+      $tmux --help
+      echo
+      echo "TMUX wrapper adds the following commands:"
+      echo "  reorder     reorder the windows to remove gaps in the indexing"
+      echo "  update-env  update current shell to new ENV vars from host session"
+      echo "  rename      bulk update window names via \$VISUAL"
+      ;;
+    *)
+      $tmux "$@"
+      ;;
+  esac
+}
+
+# vim: ft=sh sw=2 ts=2 et
