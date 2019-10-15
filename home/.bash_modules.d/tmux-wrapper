@@ -54,7 +54,6 @@ tmux-rename() {
     local winId="${result[$lastIndex]}"
     unset result[$lastIndex]
     local winTitle="${result[@]}"
-    echo "Renaming $winId '$winTitle'"
     [[ -z "$winId" ]] && continue
     [[ -z "$winTitle" ]] && continue
     [[ "$winTitle" == "TITLE" ]] && continue
