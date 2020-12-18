@@ -4,6 +4,7 @@ VERSION=1.1
 config_file="${HOME}/.tmux/tpomorc"
 db_file="${HOME}/.tmux/tpomo.db"
 mode="pomodoro"
+showDate="no"
 
 config_pomodoro=25
 config_short_break=5
@@ -22,6 +23,7 @@ usage() {
   echo "  -v, --version      Print the version"
   echo "  -h, --help         This cruft"
   echo "  -s, --status       Output status for current running Pomodoro"
+  echo "  -D, --date         Output a date if no Pomodoro is running"
   echo "  -p, --pomodoro     Start a Pomodoro (default)"
   echo "  -b, --break        Start a short break"
   echo "  -l, --long-break   Start a long break"
@@ -64,6 +66,9 @@ show_status() {
     printf "🍅 Done"
     return 0
   else
+    if [[ $showDate == "yes" ]]; then
+      date "+%Y-%m-%d"
+    fi
     return 1
   fi
 }
@@ -93,6 +98,9 @@ do
       ;;
     -s | --status)
       mode="status"
+      ;;
+    -D | --date)
+      showDate="yes"
       ;;
     -p | --pomodoro)
       mode="pomodoro"
