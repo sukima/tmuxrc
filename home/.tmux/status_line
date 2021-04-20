@@ -3,14 +3,14 @@
 NESTED_STATUS=$(tmux show-option -qv key-table)
 
 if [[ $NESTED_STATUS != "off" ]]; then
-  LEFT_STATUS_LINE='#[fg=white,bg=colour240] I am enough '
+  LEFT_STATUS_LINE='#[fg=white,bg=colour240]#{?client_prefix,✠I am enough✠, I am enough }'
   LEFT_STATUS_LINE+='#[default] #{session_name}'
   RIGHT_STATUS_LINE='#{=10:host_short} '
   RIGHT_STATUS_LINE+='#(~/.bin/tmux_battery_charge_indicator)'
   RIGHT_STATUS_LINE+='#[bg=white,fg=colour240] %H:%M '
   RIGHT_STATUS_LINE+='#[bg=colour240,fg=white] #(~/.bin/tpomo -s -D) '
 else
-  LEFT_STATUS_LINE='#[fg=red,bg=colour240] NESTED '
+  LEFT_STATUS_LINE='#[fg=red,bg=colour240]#{?client_prefix,✠NESTED✠, NESTED }'
   RIGHT_STATUS_LINE="#[fg=white,bg=colour240] #{host_short} "
 fi
 
